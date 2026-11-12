@@ -1,17 +1,37 @@
 import os
+import re
 import sys
+from collections import Counter
 
 from pypdf import PdfReader
 
 
+def normalize_line(line):
+    # "Page 15 of 31" and "Page 16 of 31" become the same line, so repeats are detected
+    return re.sub(r"\d+", "#", line.strip())
+
+
 def load_pdf(path):
-    """Return a list of (page_number, text) for every page of the PDF."""
+    """Return a list of (page_number, text) with repeated headers and footers removed."""
     reader = PdfReader(path)
-    pages = []
+    raw = []
     for number, page in enumerate(reader.pages, start=1):
         text = page.extract_text() or ""
         text = text.replace("\ufffd", "-")  # unreadable bullet symbols
-        pages.append((number, text))
+        raw.append((number, text))
+
+    # a line that appears on at least half of the pages is a header or footer
+    counts = Counter()
+    for _, text in raw:
+        for line in {normalize_line(l) for l in text.splitlines() if l.strip()}:
+            counts[line] += 1
+    limit = max(3, len(raw) // 2)
+    repeated = {line for line, n in counts.items() if n >= limit}
+
+    pages = []
+    for number, text in raw:
+        kept = [l for l in text.splitlines() if normalize_line(l) not in repeated]
+        pages.append((number, "\n".join(kept)))
     return pages
 
 
@@ -34,6 +54,9 @@ def chunk_text(text, size=800, overlap=150):
         if end >= len(text):
             break
         start = max(end - overlap, start + 1)
+        nxt = text.find(" ", start, end)  # begin the next chunk at a word boundary
+        if nxt != -1:
+            start = nxt + 1
     return chunks
 
 
