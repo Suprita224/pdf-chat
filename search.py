@@ -3,11 +3,11 @@ import sys
 import chromadb
 
 client = chromadb.PersistentClient(path="chroma_db")
-collection = client.get_collection(name="documents")
 
 
 def search(question, k=4):
     """Return the k chunks closest in meaning to the question."""
+    collection = client.get_or_create_collection(name="documents")
     result = collection.query(query_texts=[question], n_results=k)
     hits = []
     for i in range(len(result["ids"][0])):
