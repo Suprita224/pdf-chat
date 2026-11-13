@@ -6,6 +6,7 @@ from search import search
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 MODEL = "llama3.2:1b"  # change this one line to try a different model
+MAX_DISTANCE = 1.57  # refuse when even the best chunk is farther than this
 
 SYSTEM = (
     "You answer questions using ONLY the context excerpts provided. "
@@ -41,6 +42,8 @@ def ask_llm(question, hits):
 
 def answer(question, k=4):
     hits = search(question, k=k)
+    if not hits or hits[0]["distance"] > MAX_DISTANCE:
+        return {"answer": "I could not find that in the document.", "pages": [], "hits": hits}
     text = ask_llm(question, hits)
     pages = sorted({h["page"] for h in hits})
     return {"answer": text, "pages": pages, "hits": hits}

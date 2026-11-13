@@ -44,3 +44,12 @@ print()
 print(f"Best distance, answerable questions: {min(answer_best):.2f} to {max(answer_best):.2f}")
 if offtopic_best:
     print(f"Best distance, off-topic questions:  {min(offtopic_best):.2f} to {max(offtopic_best):.2f}")
+
+from answer import MAX_DISTANCE
+
+wrongly_refused = sum(1 for d in answer_best if d > MAX_DISTANCE)
+wrongly_answered = sum(1 for d in offtopic_best if d <= MAX_DISTANCE)
+print()
+print(f"Refusal cutoff {MAX_DISTANCE}:")
+print(f"  answerable questions wrongly refused: {wrongly_refused}/{len(answer_best)}")
+print(f"  off-topic questions wrongly answered: {wrongly_answered}/{len(offtopic_best)}")
